@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>BOCRA Dashboard</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+
+<style>
+* {
+    box-sizing: border-box;
+    font-family: 'Inter', sans-serif;
+}
+
+body {
+    margin: 0;
+    background: #f8fafc;
+    color: #1e293b;
+}
+
+.layout {
+    display: flex;
+    min-height: 100vh;
+}
+
+/* Sidebar */
+.sidebar {
+    width: 240px;
+    background: #ffffff;
+    border-right: 1px solid #e5e7eb;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+}
+
+.sidebar .brand {
+    font-weight: 600;
+    font-size: 18px;
+    margin-bottom: 25px;
+}
+
+.sidebar nav a {
+    display: block;
+    padding: 10px;
+    border-radius: 10px;
+    color: #475569;
+    text-decoration: none;
+    margin-bottom: 5px;
+}
+
+.sidebar nav a:hover {
+    background: #f1f5f9;
+}
+
+.sidebar nav a.active {
+    background: #e0ecff;
+    color: #2563eb;
+}
+
+aside .logout {
+    margin-top:auto; 
+    padding-top:20px; 
+    border-top:1px solid #e5e7eb;
+}
+
+/* Main */
+main {
+    flex: 1;
+    padding: 20px;
+}
+
+/* Topbar */
+.topbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #fff;
+    padding: 15px 20px;
+    border-radius: 14px;
+    border: 1px solid #e5e7eb;
+    margin-bottom: 20px;
+}
+
+.user {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.user img {
+    width: 40px;
+    border-radius: 50%;
+}
+
+/* Tabs */
+.tabs {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.tab {
+    padding: 10px 20px;
+    border-radius: 10px;
+    background: #e5e7eb;
+    cursor: pointer;
+    font-weight: 500;
+}
+
+.tab.active {
+    background: #2563eb;
+    color: #fff;
+}
+
+/* Progress Bar */
+.progress-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 30px;
+}
+
+.progress-step {
+    flex: 1;
+    text-align: center;
+    position: relative;
+}
+
+.progress-step:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    top: 12px;
+    left: 50%;
+    width: 100%;
+    height: 4px;
+    background: #e5e7eb;
+    z-index: -1;
+}
+
+.progress-step.active:not(:last-child)::after {
+    background: #22c55e;
+}
+
+.step-circle {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: #e5e7eb;
+    color: white;
+    line-height: 28px;
+    margin: 0 auto 5px;
+    font-size: 13px;
+}
+
+.progress-step.active .step-circle {
+    background: #22c55e;
+}
+
+.step-label {
+    font-size: 13px;
+    color: #64748b;
+}
+
+.progress-step.active .step-label {
+    color: #22c55e;
+    font-weight: 600;
+}
+
+/* Form */
+.application-form {
+    background: #fff;
+    padding: 20px;
+    border-radius: 14px;
+    border: 1px solid #e5e7eb;
+}
+
+.application-form input,
+.application-form select,
+.application-form textarea {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 15px;
+    border-radius: 8px;
+    border: 1px solid #cbd5e1;
+}
+
+.application-form button {
+    background: #2563eb;
+    color: #fff;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 10px;
+    cursor: pointer;
+    margin-right: 10px;
+}
+
+.application-form button:hover {
+    background: #1d4ed8;
+}
+</style>
+</head>
+
+<body>
+
+<div class="layout">
+
+<!-- Sidebar -->
+<aside class="sidebar">
+    <div class="brand">BOCRA Portal</div>
+
+    <nav>
+        <a class="active">🏠 Home</a>
+        <a>📄 Licensing</a>
+        <a>📑 Compliance</a>
+        <a>✅ Type Approval</a>
+        <a>🌐 ASMS-WebCP</a>
+        <a>🌐 QoS Monitoring</a>
+        <a>⚠️ Complaints</a>
+        <a>📊 Reports</a>
+        <a>💬 Support</a>
+        <a>⚙️ Settings</a>
+        <a>👤 Profile</a>
+    </nav>
+
+    <div class="logout">
+        <a>🚪 Logout</a>
+    </div>
+</aside>
+
+<!-- Main -->
+<main>
+
+<!-- Topbar -->
+<div class="topbar">
+    <div id="date"></div>
+    <div class="user">
+        <img src="https://i.pravatar.cc/40">
+        <span>Aupa Moleofe</span>
+    </div>
+</div>
+
+<!-- Tabs -->
+<div class="tabs">
+    <div class="tab active" data-tab="apply">Apply</div>
+    <div class="tab" data-tab="renewal">Renewal</div>
+    <div class="tab" data-tab="upgrade">Upgrade</div>
+    <div class="tab" data-tab="transfer">Transfer</div>
+</div>
+
+<!-- Progress Bar -->
+<div class="progress-bar" id="progressBar"></div>
+
+<!-- Application Form -->
+<div class="application-form" id="formContent"></div>
+
+</main>
+</div>
+
+<script>
+// Date
+document.getElementById("date").textContent = new Date().toDateString();
+
+// Tabs
+const tabs = document.querySelectorAll('.tab');
+const formContent = document.getElementById('formContent');
+
+let currentTab = 'apply';
+let currentStep = 1;
+
+tabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+        tabs.forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        currentTab = tab.dataset.tab;
+        currentStep = 1;
+        updateProgressBar();
+        updateForm();
+    });
+});
+
+function nextStep() {
+    if(currentStep < 3) {
+        currentStep++;
+        updateProgressBar();
+        updateForm();
+    } else {
+        alert(`${currentTab.charAt(0).toUpperCase() + currentTab.slice(1)} form submitted!`);
+        currentStep = 1;
+        updateProgressBar();
+        updateForm();
+    }
+}
+
+function prevStep() {
+    if(currentStep > 1) {
+        currentStep--;
+        updateProgressBar();
+        updateForm();
+    }
+}
+
+// Dynamic Progress Bar
+function updateProgressBar() {
+    const stepConfigs = {
+        apply: ["User", "Business", "Review"],
+        renewal: ["License", "Contact", "Review"],
+        upgrade: ["Current", "Upgrade", "Review"],
+        transfer: ["From/To", "Contact", "Review"]
+    };
+
+    const steps = stepConfigs[currentTab];
+    const progressBar = document.getElementById("progressBar");
+
+    let html = "";
+
+    steps.forEach((label, index) => {
+        html += `
+            <div class="progress-step ${index < currentStep ? 'active' : ''}">
+                <div class="step-circle">${index + 1}</div>
+                <div class="step-label">${label}</div>
+            </div>
+        `;
+    });
+
+    progressBar.innerHTML = html;
+}
+
+// Update form content
+function updateForm() {
+    let content = '';
+
+    if(currentTab === 'apply') {
+        if(currentStep === 1) {
+            content = `
+                <h3>Apply - Step 1</h3>
+                <input type="text" placeholder="Full Name">
+                <input type="email" placeholder="Email">
+
+                <select>
+                    <option disabled selected>Select License Type</option>
+                    <option>Dealer</option>
+                    <option>System and Services</option>
+                    <option>Spectrum</option>
+                    <option>Type Approval</option>
+                </select>
+
+                <button type="button" onclick="nextStep()">Next</button>
+            `;
+        } else if(currentStep === 2) {
+            content = `
+                <h3>Apply - Step 2</h3>
+                <input type="text" placeholder="Organization Name">
+                <input type="text" placeholder="Phone Number">
+
+                <button type="button" onclick="prevStep()">Previous</button>
+                <button type="button" onclick="nextStep()">Next</button>
+            `;
+        } else {
+            content = `
+                <h3>Apply - Step 3</h3>
+                <textarea placeholder="Additional Information"></textarea>
+
+                <button type="button" onclick="prevStep()">Previous</button>
+                <button type="button" onclick="nextStep()">Submit</button>
+            `;
+        }
+    } 
+    else if(currentTab === 'renewal') {
+        if(currentStep === 1) {
+            content = `
+                <h3>Renewal - Step 1</h3>
+                <input type="text" placeholder="License Number">
+                <input type="text" placeholder="Company Name">
+                <button type="button" onclick="nextStep()">Next</button>
+            `;
+        } else if(currentStep === 2) {
+            content = `
+                <h3>Renewal - Step 2</h3>
+                <input type="text" placeholder="Email">
+                <input type="text" placeholder="Phone Number">
+
+                <button type="button" onclick="prevStep()">Previous</button>
+                <button type="button" onclick="nextStep()">Next</button>
+            `;
+        } else {
+            content = `
+                <h3>Renewal - Step 3</h3>
+                <textarea placeholder="Additional Notes"></textarea>
+
+                <button type="button" onclick="prevStep()">Previous</button>
+                <button type="button" onclick="nextStep()">Submit</button>
+            `;
+        }
+    } 
+    else if(currentTab === 'upgrade') {
+        if(currentStep === 1) {
+            content = `
+                <h3>Upgrade - Step 1</h3>
+                <input type="text" placeholder="Current License">
+                <input type="text" placeholder="Requested Upgrade">
+                <button type="button" onclick="nextStep()">Next</button>
+            `;
+        } else if(currentStep === 2) {
+            content = `
+                <h3>Upgrade - Step 2</h3>
+                <input type="text" placeholder="Email">
+                <input type="text" placeholder="Phone">
+
+                <button type="button" onclick="prevStep()">Previous</button>
+                <button type="button" onclick="nextStep()">Next</button>
+            `;
+        } else {
+            content = `
+                <h3>Upgrade - Step 3</h3>
+                <textarea placeholder="Additional Comments"></textarea>
+
+                <button type="button" onclick="prevStep()">Previous</button>
+                <button type="button" onclick="nextStep()">Submit</button>
+            `;
+        }
+    } 
+    else if(currentTab === 'transfer') {
+        if(currentStep === 1) {
+            content = `
+                <h3>Transfer - Step 1</h3>
+                <input type="text" placeholder="From License">
+                <input type="text" placeholder="To License">
+                <button type="button" onclick="nextStep()">Next</button>
+            `;
+        } else if(currentStep === 2) {
+            content = `
+                <h3>Transfer - Step 2</h3>
+                <input type="text" placeholder="Contact Name">
+                <input type="text" placeholder="Contact Phone">
+
+                <button type="button" onclick="prevStep()">Previous</button>
+                <button type="button" onclick="nextStep()">Next</button>
+            `;
+        } else {
+            content = `
+                <h3>Transfer - Step 3</h3>
+                <textarea placeholder="Additional Info"></textarea>
+
+                <button type="button" onclick="prevStep()">Previous</button>
+                <button type="button" onclick="nextStep()">Submit</button>
+            `;
+        }
+    }
+
+    formContent.innerHTML = content;
+}
+
+// Initialize
+updateProgressBar();
+updateForm();
+</script>
+
+</body>
+</html>
