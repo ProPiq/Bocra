@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BOCRA Two-Step Signup</title>
+    <title>Login | BOCRA Public Portal</title>
     <style>
         /* ⛔ UI NOT CHANGED */
         * {
@@ -204,6 +204,7 @@
                 <h1 id="title">Hello,<br>Welcome Back</h1>
                 <p class="subtitle" id="subtitle">Hey, welcome back to your special place</p>
 
+                <div id="loginError" class="error-message" style="display: none; color: #d32f2f; font-size: 14px; margin: 10px 0 20px 0; padding: 10px; background: #ffebee; border-radius: 6px; border-left: 4px solid #d32f2f;"></div>
                 <input class="input" id="fullName" placeholder="Full Name" style="display:none">
                 <input class="input" id="email" placeholder="Email">
                 <input class="input" id="phoneNumber" placeholder="Phone Number" style="display:none">
@@ -321,6 +322,11 @@
             $("orgSection").style.display = $("userType").value === "organization" ? "block" : "none";
 
         $("mainBtn").onclick = async () => {
+            const errorDiv = $("loginError");
+            errorDiv.style.display = "none";
+            $("email").onfocus = () => errorDiv.style.display = "none";
+            $("password").onfocus = () => errorDiv.style.display = "none";
+
             const email = $("email").value.trim();
             const password = $("password").value;
 
@@ -390,7 +396,9 @@
 
                     const data = await res.json();
                     if (!res.ok) {
-                        alert(data.message || "Login failed");
+                        const errorDiv = $("loginError");
+                        errorDiv.textContent = data.message || "Login failed";
+                        errorDiv.style.display = "block";
                         console.error(data);
                         return;
                     }
