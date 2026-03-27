@@ -1,57 +1,22 @@
-<!DOCTYPE html>
-<html lang="en">
-    <head>
-        <meta charset="utf-8">
-        <title>EVERGREEN | HTML Business Template</title>
-        <meta content="width=device-width, initial-scale=1.0" name="viewport">
-        <meta content="" name="keywords">
-        <meta content="" name="description">
-
-        <!-- Favicons -->
-        <link href="img/favicon.ico" rel="icon">
-        <link href="img/apple-touch-icon.png" rel="apple-touch-icon">
-
-        <!-- Google Fonts -->
-        <link href="https://fonts.googleapis.com/css?family=Montserrat:200,300|Nunito:400,700&display=swap" rel="stylesheet">
-
-        <!-- Bootstrap CSS File -->
-        <link href="vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
-
-        <!-- Vendor CSS Files -->
-        <link href="vendor/ionicons/css/ionicons.min.css" rel="stylesheet">
-        <link href="vendor/owlcarousel/assets/owl.carousel.min.css" rel="stylesheet">
-        <link href="vendor/lightbox/css/lightbox.min.css" rel="stylesheet">
-
-        <!-- Main Stylesheet -->
-        <link href="css/style.css" rel="stylesheet">
-    </head>
-
-    <body>
-        <!-- Header Section Start -->
+<template>
+<!-- Header Section Start -->
         <header class="header">
             <div class="container-fluid">
                 <div class="logo pull-left">
-                    <h1><a href="index.html">EVERGREEN</a></h1>
-                    <!-- <a href="#"><img src="img/logo.png" alt="" title="" /></a>-->
+                    <a href="#/" class="logo-link" aria-label="BOCRA home">
+                        <img src="/img/logo-transparent.png" alt="BOCRA" />
+                    </a>
                 </div>
 
                 <nav id="nav-menu-container">
                     <ul class="nav-menu">
-                        <li><a href="index.html">Home</a></li>
-                        <li><a href="about.html">About</a></li>
-                        <li><a href="service.html">Services</a></li>
-                        <li><a href="portfolio.html">Portfolio</a></li>
-                        <li class="menu-active"><a href="price.html">Price</a></li>
-                        <li class="menu-has-children"><a href="#">Dropdown <i class="dicon ion-md-arrow-dropdown"></i></a>
-                            <ul>
-                                <li><a href="">Dropdown Item</a></li>
-                                <li><a href="">Dropdown Item</a></li>
-                                <li><a href="">Dropdown Item</a></li>
-                                <li><a href="">Dropdown Item</a></li>
-                                <li><a href="">Dropdown Item</a></li>
-                            </ul>
-                        </li>
-                        <li><a href="contact.html">Contact</a></li>
+                        <li><a href="#/">Home</a></li>
+                        <li><a href="#/about">About</a></li>
+                        <li><a href="#/service">Services</a></li>
+                        <li><a href="#/portfolio">Portfolio</a></li>
+                        <li class="menu-active"><a href="#/price">Pricing</a></li>
+                        <li><a href="#/contact">Contact</a></li>
+                        <li class="login-btn"><a href="#/login">Login</a></li>
                     </ul>
                 </nav>
             </div>
@@ -64,8 +29,8 @@
                 <div class="col-lg-12">
                     <div class="banner-nav">
                         <div class="banner-box">
-                            <a href="index.html">Home </a>
-                            <a href="price.html">Price</a>
+                            <a href="#/">Home </a>
+                            <a href="#/price">Price</a>
                         </div>
                     </div>
                 </div>
@@ -148,46 +113,47 @@
                 <div class="container">
                     <div class="row">
                         <div class="col-lg-3 col-md-6 footer-info">
-                            <h3>EVERGREEN</h3>
+                            <h3>BOCRA</h3>
                             <p>
-                                Lorem ipsum dolor sit amet, consectetur adipiscing elit. Etiam a tortor commodo, sollicitudin velit nec, lobortis erat. Sed rutrum metus ac augue scelerisque, vel commodo erat commodo. Mauris quis mattis sem. Maecenas dictum nunc.
+                                Botswana Communications Regulatory Authority regulates the communications sector in
+                                Botswana and supports safe, competitive, and inclusive digital growth.
                             </p>
                         </div>
 
                         <div class="col-lg-3 col-md-6 footer-links">
-                            <h4>About Us</h4>
+                            <h4>Quick Links</h4>
                             <ul>
-                                <li><i class="ion-md-arrow-dropright"></i> <a href="#">Home</a></li>
-                                <li><i class="ion-md-arrow-dropright"></i> <a href="#">About us</a></li>
-                                <li><i class="ion-md-arrow-dropright"></i> <a href="#">Our services</a></li>
-                                <li><i class="ion-md-arrow-dropright"></i> <a href="#">Terms & condition</a></li>
-                                <li><i class="ion-md-arrow-dropright"></i> <a href="#">Privacy policy</a></li>
+                                <li><i class="ion-md-arrow-dropright"></i> <a href="#/">Home</a></li>
+                                <li><i class="ion-md-arrow-dropright"></i> <a href="#/about">About</a></li>
+                                <li><i class="ion-md-arrow-dropright"></i> <a href="#/service">Services</a></li>
+                                <li><i class="ion-md-arrow-dropright"></i> <a href="#/contact">Contact</a></li>
+                                <li><i class="ion-md-arrow-dropright"></i> <a href="#/login">Portal Login</a></li>
                             </ul>
                         </div>
 
                         <div class="col-lg-3 col-md-6 footer-contact">
                             <h4>Contact Us</h4>
                             <p>
-                                1300  Center Avenue<br>
-                                Fresno, California<br>
-                                United States <br>
-                                <strong>Phone:</strong> +123-456-7890<br>
-                                <strong>Email:</strong> info@example.com<br>
+                                Plot 50671<br>
+                                Independence Avenue, Gaborone<br>
+                                Botswana<br>
+                                <strong>Phone:</strong> +267 395 7755<br>
+                                <strong>Email:</strong> info@bocra.org.bw<br>
                             </p>
 
                             <div class="social-links">
-                                <a href="#"><i class="ion-logo-twitter"></i></a>
-                                <a href="#"><i class="ion-logo-facebook"></i></a>
-                                <a href="#"><i class="ion-logo-linkedin"></i></a>
-                                <a href="#"><i class="ion-logo-instagram"></i></a>
-                                <a href="#"><i class="ion-logo-googleplus"></i></a>
+                                <a href="https://x.com/bocrabw"><i class="ion-logo-twitter"></i></a>
+                                <a href="https://www.facebook.com/BTAbw"><i class="ion-logo-facebook"></i></a>
+                                <a href="https://www.youtube.com/channel/UCkv70wCxbxy7OkC12QlL3ZA/feed"><i class="ion-logo-youtube"></i></a>
+                                <a href="https://www.linkedin.com/company/bta_3/"><i class="ion-logo-linkedin"></i></a>
+                                <a href="https://www.flickr.com/photos/bocra_bw/"><i class="ion-logo-flickr"></i></a>
                             </div>
 
                         </div>
 
                         <div class="col-lg-3 col-md-6 footer-newsletter">
-                            <h4>Subscription</h4>
-                            <p>Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type.</p>
+                            <h4>Stay Updated</h4>
+                            <p>Subscribe for BOCRA public notices, regulatory updates, and service announcements.</p>
                             <form action="" method="post">
                                 <input type="email" name="email"><input type="submit"  value="Subscribe">
                             </form>
@@ -199,8 +165,7 @@
 
             <div class="container">
                 <div class="copyright">
-                    &copy; Copyright <a href="https://htmlcodex.com">HTML Codex</a>. All Rights Reserved<br>
-					Template By <a href="https://htmlcodex.com">HTML Codex</a>
+                    &copy; Copyright <a href="#/">BOCRA</a>. All Rights Reserved
                 </div>
             </div>
         </footer>
@@ -209,21 +174,4 @@
         <a href="#" class="back-to-top"><i class="ion-md-arrow-dropup"></i></a>
 
         <!-- Vendor JS Files -->
-        <script src="vendor/jquery/jquery.min.js"></script>
-        <script src="vendor/jquery/jquery-migrate.min.js"></script>
-        <script src="vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
-        <script src="vendor/easing/easing.min.js"></script>
-        <script src="vendor/superfish/hoverIntent.js"></script>
-        <script src="vendor/superfish/superfish.min.js"></script>
-        <script src="vendor/waypoints/waypoints.min.js"></script>
-        <script src="vendor/touchSwipe/jquery.touchSwipe.min.js"></script>
-        <script src="vendor/counterup/counterup.min.js"></script>
-        <script src="vendor/owlcarousel/owl.carousel.min.js"></script>
-        <script src="vendor/isotope/isotope.pkgd.min.js"></script>
-        <script src="vendor/lightbox/js/lightbox.min.js"></script>
-
-        <!-- Main Javascript File -->
-        <script src="js/main.js"></script>
-
-    </body>
-</html>
+</template>

@@ -87,6 +87,14 @@ h6 {
 
 .header .logo {
     float: left;
+    display: flex;
+    align-items: center;
+}
+
+.header .logo a {
+    display: inline-flex;
+    align-items: center;
+    text-decoration: none;
 }
 
 .header .logo h1 {
@@ -101,9 +109,16 @@ h6 {
 }
 
 .header .logo img {
+    display: block;
     padding: 0;
     margin: 0;
-    max-height: 100%;
+    width: auto;
+    height: 56px;
+    max-height: none;
+}
+
+.header.header-scrolled .logo img {
+    height: 44px;
 }
 
 
@@ -482,7 +497,7 @@ body.mobile-nav-active #mobile-nav-toggle {
 
 /* ---------------- Banner Section ----------------- */
 .banner {
-    background: url("../img/banner.jpg") center top no-repeat;
+    background: url("/img/banner.jpg") center top no-repeat;
     background-size: cover;
     padding: 150px 0 60px 0;
     position: relative;
@@ -1569,7 +1584,11 @@ body.mobile-nav-active #mobile-nav-toggle {
     }
 
     .header .logo img {
-        max-height: 40px;
+        height: 40px;
+    }
+
+    .header.header-scrolled .logo img {
+        height: 36px;
     }
 
     .slider h2 {
@@ -1719,7 +1738,7 @@ body.mobile-nav-active #mobile-nav-toggle {
     position: relative;
     height: 65vh;               /* reduced height */
     min-height: 420px;
-    background-image: url("../img/slider-1.jpg");
+    background-image: url("/img/slider-1.jpg");
     background-position: center;
     background-repeat: no-repeat;
     background-size: cover;
@@ -1813,5 +1832,4 @@ body.mobile-nav-active #mobile-nav-toggle {
     background-color: #ff7875;
     transform: scale(1.1); /* slight grow on hover */
 }
-
 
