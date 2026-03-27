@@ -361,9 +361,8 @@ tr:hover {
     <nav>
         <a class="active">🏠 Home</a>
         <a href="licensing.html">📄 Licensing</a>
-        <a>📑 Compliance</a>
+        <a href="compliance.html">📑 Compliance</a>
         <a>✅ Type Approval</a>
-        <a>🌐 ASMS-WebCP</a>
         <a>🌐 QoS Monitoring</a>
         <a>⚠️ Complaints</a>
         <a>📊 Reports</a>
@@ -417,7 +416,7 @@ tr:hover {
 <div class="content">
 
     <div class="card">
-        <h3>Fixed Broadband Subscriptions</h3>
+        <h3>Quality of Network</h3>
         <div class="chart-container">
             <canvas id="barChart"></canvas>
         </div>
@@ -441,7 +440,7 @@ tr:hover {
             <thead>
                 <tr>
                     <th>Name</th>
-                    <th>Device</th>
+                    <th>License Type</th>
                     <th>Status</th>
                     <th>Date</th>
                     <th>Action</th>
@@ -450,14 +449,14 @@ tr:hover {
             <tbody>
                 <tr>
                     <td>Arifbillah</td>
-                    <td>Macbook Pro</td>
+                    <td>Dealer</td>
                     <td><span class="status approved">Complete</span></td>
                     <td>Jul 21, 2023</td>
                     <td><button class="action-btn">View</button></td>
                 </tr>
                 <tr>
                     <td>Arifbillah</td>
-                    <td>Mobile</td>
+                    <td>Spectrum</td>
                     <td><span class="status pending">In Process</span></td>
                     <td>Jul 21, 2023</td>
                     <td><button class="action-btn">View</button></td>
@@ -504,9 +503,9 @@ function createBarChart() {
         data: {
             labels: ['Jan','Feb','Mar','Apr','May','Jun'],
             datasets: [
-                { label: 'Orange', data: [12,19,8,15,10,14], backgroundColor: '#ff7900' },
-                { label: 'Mascom', data: [8,11,6,10,7,9], backgroundColor: '#ffe800' },
-                { label: 'BTCL', data: [5,9,4,7,6,8], backgroundColor: '#0d6731' }
+                { label: 'Call', data: [12,19,8,15,10,14], backgroundColor: '#ff7900' },
+                { label: 'Data', data: [8,11,6,10,7,9], backgroundColor: '#ffe800' },
+                { label: 'SMS', data: [5,9,4,7,6,8], backgroundColor: '#0d6731' }
             ]
         },
         options: {
