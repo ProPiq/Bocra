@@ -76,8 +76,10 @@
               />
               <select v-model="form.orgType" class="input" @change="clearError">
                 <option value="company">Company</option>
-                <option value="trust">Trust</option>
-                <option value="association">Association</option>
+                <option value="government">Government</option>
+                <option value="ngo">NGO</option>
+                <option value="individual">Individual</option>
+                <option value="other">Other</option>
               </select>
               <input
                 v-model="form.taxId"
@@ -169,11 +171,14 @@
 
 <script setup>
 import { computed, reactive, ref } from "vue";
+import { useRoute, useRouter } from "vue-router";
+import { persistAuthSession, resolveApiUrl } from "../lib/platformApi";
 
-const REGISTER_ENDPOINT =
-  "https://bocra-api.skidotools.co.bw/api/v1/auth/register";
-const LOGIN_ENDPOINT = "https://bocra-api.skidotools.co.bw/api/v1/auth/login";
+const REGISTER_ENDPOINT = resolveApiUrl("/auth/register");
+const LOGIN_ENDPOINT = resolveApiUrl("/auth/login");
 
+const route = useRoute();
+const router = useRouter();
 const mode = ref("signin");
 const isSubmitting = ref(false);
 const rememberMe = ref(true);
@@ -206,9 +211,34 @@ const subtitle = computed(() =>
     : "Sign in to manage your applications and services.",
 );
 const buttonLabel = computed(() => (isSignUp.value ? "Register" : "Sign In"));
+const redirectPath = computed(() =>
+  typeof route.query.redirect === "string" && route.query.redirect.startsWith("/")
+    ? route.query.redirect
+    : "/dashboard",
+);
 
 function clearError() {
   errorMessage.value = "";
+}
+
+function resolveErrorMessage(data, fallbackMessage) {
+  if (!data) {
+    return fallbackMessage;
+  }
+
+  if (typeof data.message === "string" && data.message.trim()) {
+    return data.message;
+  }
+
+  if (typeof data.detail === "string" && data.detail.trim()) {
+    return data.detail;
+  }
+
+  if (Array.isArray(data.detail) && data.detail.length && typeof data.detail[0]?.msg === "string") {
+    return data.detail[0].msg;
+  }
+
+  return fallbackMessage;
 }
 
 function startSignUp() {
@@ -286,7 +316,7 @@ async function handleSubmit() {
 
       const data = await response.json();
       if (!response.ok) {
-        errorMessage.value = data.message || "Registration failed.";
+        errorMessage.value = resolveErrorMessage(data, "Registration failed.");
         return;
       }
 
@@ -308,15 +338,22 @@ async function handleSubmit() {
 
     const data = await response.json();
     if (!response.ok) {
-      errorMessage.value = data.message || "Login failed.";
+      errorMessage.value = resolveErrorMessage(data, "Login failed.");
       return;
     }
 
-    if (typeof data.token === "string" && data.token.length > 0) {
-      localStorage.setItem("token", data.token);
+    if (data.requires_mfa) {
+      errorMessage.value = "Multi-factor authentication is required for this account.";
+      return;
     }
-    window.alert("Login successful!");
-    window.location.href = "#/clientDash";
+
+    if (!data.session?.access_token) {
+      errorMessage.value = "Login response did not include a usable session.";
+      return;
+    }
+
+    persistAuthSession(data);
+    await router.push(redirectPath.value);
   } catch (error) {
     console.error(error);
     errorMessage.value = isSignUp.value

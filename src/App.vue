@@ -19,7 +19,8 @@ function resetLegacyMobileNav() {
 }
 
 async function syncRouteUi() {
-  document.title = route.meta?.title || "BOCRA";
+  document.title = route.meta?.documentTitle || route.meta?.title || "BOCRA";
+  document.body.classList.toggle("platform-auth-body", Boolean(route.meta?.authShell));
 
   await nextTick();
 

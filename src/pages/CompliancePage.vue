@@ -1,53 +1,58 @@
 <template>
-  <div class="compliance-page">
-    <div class="layout">
-      <aside class="sidebar">
-        <div class="brand">BOCRA Portal</div>
-
-        <nav>
-          <a href="#/clientDash">Home</a>
-          <a href="#/licensing">Licensing</a>
-          <a class="active" href="#/compliance">Compliance</a>
-          <a class="disabled">Type Approval</a>
-          <a class="disabled">QoS Monitoring</a>
-          <a class="disabled">Complaints</a>
-          <a class="disabled">Reports</a>
-          <a class="disabled">Support</a>
-          <a class="disabled">Settings</a>
-          <a class="disabled">Profile</a>
-        </nav>
-
-        <div class="logout">
-          <a href="#/login">Logout</a>
+  <ClientWorkspaceLayout>
+    <div class="app-page compliance-page">
+      <section class="app-panel app-page-hero">
+        <div>
+          <p class="app-eyebrow">Compliance workspace</p>
+          <h2>Submit compliance returns, continue drafts, and track expiry exposure in one place.</h2>
+          <p>
+            This page now uses the live compliance modules, submissions, and expiry tracker
+            endpoints instead of demo data.
+          </p>
         </div>
-      </aside>
 
-      <main>
-        <div class="topbar">
-          <div>{{ currentDate }}</div>
-          <div class="user">
-            <img :src="user.avatar" :alt="user.name" />
-            <span>{{ user.name }}</span>
+        <span class="app-status-pill app-status-pill--info">
+          {{ complianceModules.length }} module{{ complianceModules.length === 1 ? "" : "s" }}
+        </span>
+      </section>
+
+      <p v-if="loading" class="app-note">Loading your compliance workspace...</p>
+
+      <template v-else>
+        <p v-if="errorMessage" class="app-note app-note--error">{{ errorMessage }}</p>
+        <p v-if="successMessage" class="compliance-page__success">{{ successMessage }}</p>
+
+        <section class="app-meta-grid">
+          <article v-for="stat in stats" :key="stat.label" class="app-stat-card">
+            <p>{{ stat.label }}</p>
+            <strong>{{ stat.value }}</strong>
+            <span>{{ stat.caption }}</span>
+          </article>
+        </section>
+
+        <section class="app-panel">
+          <div class="app-section-head">
+            <div>
+              <h3>Compliance modules</h3>
+              <p>Select the module you want to file against or inspect.</p>
+            </div>
+
+            <button
+              class="app-button app-button--secondary"
+              type="button"
+              :disabled="saving"
+              @click="resetEditor"
+            >
+              New draft
+            </button>
           </div>
-        </div>
 
-        <div class="stats-grid">
-          <div v-for="stat in stats" :key="stat.label" class="stat-card">
-            <div class="stat-number">{{ stat.value }}</div>
-            <div class="stat-label">{{ stat.label }}</div>
-          </div>
-        </div>
-
-        <div class="tabs-container">
-          <div v-if="modulesLoading" class="loading">Loading compliance modules...</div>
-          <div v-else-if="modulesError" class="loading error">{{ modulesError }}</div>
-
-          <div v-if="complianceModules.length" class="tabs">
+          <div v-if="complianceModules.length" class="app-tab-row">
             <button
               v-for="module in complianceModules"
               :key="module.code"
-              class="tab"
-              :class="{ active: module.code === selectedModuleCode }"
+              class="app-tab"
+              :class="{ 'is-active': module.code === selectedModuleCode }"
               type="button"
               :title="module.description"
               @click="selectModule(module.code)"
@@ -55,279 +60,363 @@
               {{ module.name }}
             </button>
           </div>
-        </div>
+          <p v-else class="app-note">No compliance modules are configured for this environment.</p>
+        </section>
 
-        <div v-if="selectedModule" class="application-form">
-          <h3>{{ selectedModule.name }} Submission</h3>
-          <p>{{ selectedModule.description }}</p>
+        <section class="compliance-page__grid">
+          <article class="app-panel">
+            <div class="app-section-head">
+              <div>
+                <h3>{{ selectedModule?.name || "Compliance draft" }}</h3>
+                <p>{{ selectedModule?.description || "Select a module to load its reporting fields." }}</p>
+              </div>
+            </div>
 
-          <form @submit.prevent="submitComplianceForm">
-            <div
-              v-for="(field, index) in selectedModule.payload_fields || []"
-              :key="getFieldKey(field, index)"
-              class="form-field"
-            >
-              <label :for="getFieldKey(field, index)">
-                {{ field.label || field.name || `Field ${index + 1}` }}
-                <span v-if="field.required" class="required">*</span>
-              </label>
-
-              <textarea
-                v-if="getFieldType(field) === 'textarea'"
-                :id="getFieldKey(field, index)"
-                v-model="moduleValues[getFieldKey(field, index)]"
-                :placeholder="field.description || field.label || ''"
-              ></textarea>
-
-              <select
-                v-else-if="getFieldType(field) === 'select'"
-                :id="getFieldKey(field, index)"
-                v-model="moduleValues[getFieldKey(field, index)]"
-              >
-                <option value="">
-                  Select {{ field.label || field.name || "an option" }}
-                </option>
-                <option
-                  v-for="option in getFieldOptions(field)"
-                  :key="option.value"
-                  :value="option.value"
+            <form v-if="selectedModule" class="app-form-grid" @submit.prevent="saveDraft">
+              <div class="app-form-field">
+                <label for="compliance-organization">Organization</label>
+                <select
+                  id="compliance-organization"
+                  v-model="editorForm.organization_id"
+                  class="app-select"
+                  :disabled="Boolean(selectedSubmissionId)"
                 >
-                  {{ option.label }}
-                </option>
-              </select>
+                  <option value="">Select organization</option>
+                  <option v-for="organization in organizations" :key="organization.id" :value="organization.id">
+                    {{ organization.name }}
+                  </option>
+                </select>
+              </div>
 
-              <input
-                v-else
-                :id="getFieldKey(field, index)"
-                v-model="moduleValues[getFieldKey(field, index)]"
-                :type="getFieldType(field)"
-                :placeholder="field.description || field.label || ''"
-              />
+              <div class="app-form-field">
+                <label for="compliance-start">Reporting period start</label>
+                <input
+                  id="compliance-start"
+                  v-model="editorForm.reporting_period_start"
+                  class="app-input"
+                  type="date"
+                />
+              </div>
+
+              <div class="app-form-field">
+                <label for="compliance-end">Reporting period end</label>
+                <input
+                  id="compliance-end"
+                  v-model="editorForm.reporting_period_end"
+                  class="app-input"
+                  type="date"
+                />
+              </div>
+
+              <div
+                v-for="(field, index) in selectedModule.payload_fields || []"
+                :key="getFieldKey(field, index)"
+                class="app-form-field"
+              >
+                <label :for="`compliance-${getFieldKey(field, index)}`">
+                  {{ field.label }}
+                  <span v-if="field.required">*</span>
+                </label>
+
+                <textarea
+                  v-if="getFieldType(field) === 'textarea'"
+                  :id="`compliance-${getFieldKey(field, index)}`"
+                  v-model="moduleValues[getFieldKey(field, index)]"
+                  class="app-textarea"
+                  :placeholder="field.description || field.label"
+                ></textarea>
+
+                <select
+                  v-else-if="getFieldType(field) === 'select'"
+                  :id="`compliance-${getFieldKey(field, index)}`"
+                  v-model="moduleValues[getFieldKey(field, index)]"
+                  class="app-select"
+                >
+                  <option value="">Select {{ field.label }}</option>
+                  <option
+                    v-for="option in getFieldOptions(field)"
+                    :key="option.value"
+                    :value="option.value"
+                  >
+                    {{ option.label }}
+                  </option>
+                </select>
+
+                <input
+                  v-else
+                  :id="`compliance-${getFieldKey(field, index)}`"
+                  v-model="moduleValues[getFieldKey(field, index)]"
+                  class="app-input"
+                  :type="getFieldType(field)"
+                  :placeholder="field.description || field.label"
+                />
+              </div>
+
+              <div class="app-form-field">
+                <label for="compliance-certificate-name">Certificate name</label>
+                <input
+                  id="compliance-certificate-name"
+                  v-model="editorForm.certificate_name"
+                  class="app-input"
+                  type="text"
+                />
+              </div>
+
+              <div class="app-form-field">
+                <label for="compliance-certificate-reference">Certificate reference</label>
+                <input
+                  id="compliance-certificate-reference"
+                  v-model="editorForm.certificate_reference"
+                  class="app-input"
+                  type="text"
+                />
+              </div>
+
+              <div class="app-form-field">
+                <label for="compliance-certificate-expiry">Certificate expiry date</label>
+                <input
+                  id="compliance-certificate-expiry"
+                  v-model="editorForm.certificate_expiry_date"
+                  class="app-input"
+                  type="date"
+                />
+              </div>
+
+              <div class="compliance-page__actions">
+                <button class="app-button" type="submit" :disabled="saving">
+                  {{ selectedSubmissionId ? "Save draft changes" : "Save draft" }}
+                </button>
+                <button
+                  class="app-button app-button--secondary"
+                  type="button"
+                  :disabled="saving"
+                  @click="submitRecord"
+                >
+                  {{ selectedSubmissionId ? "Submit record" : "Save and submit" }}
+                </button>
+              </div>
+            </form>
+
+            <p v-else class="app-note">Select a module to start a compliance submission.</p>
+          </article>
+
+          <article class="app-panel">
+            <div class="app-section-head">
+              <div>
+                <h3>Expiry tracker</h3>
+                <p>Live compliance and licence expiry exposure across your linked organizations.</p>
+              </div>
             </div>
 
-            <div class="form-actions">
-              <button type="submit" class="submit-button">Submit Compliance Report</button>
-            </div>
-          </form>
-        </div>
+            <div class="compliance-page__expiry-stack">
+              <article class="app-panel-muted">
+                <strong>License expiries</strong>
+                <ul v-if="expiryTracker.license_expiries?.length" class="compliance-page__mini-list">
+                  <li v-for="license in expiryTracker.license_expiries.slice(0, 6)" :key="license.license_number">
+                    <span>{{ license.license_number }}</span>
+                    <strong>{{ formatDaysUntilExpiry(license.days_until_expiry) }}</strong>
+                  </li>
+                </ul>
+                <p v-else>No licence expiries are currently inside the tracker window.</p>
+              </article>
 
-        <div class="table-container">
-          <div class="table-header">
-            <h3>Recent Submissions</h3>
+              <article class="app-panel-muted">
+                <strong>Certificate expiries</strong>
+                <ul
+                  v-if="expiryTracker.certificate_expiries?.length"
+                  class="compliance-page__mini-list"
+                >
+                  <li
+                    v-for="certificate in expiryTracker.certificate_expiries.slice(0, 6)"
+                    :key="certificate.compliance_submission_id"
+                  >
+                    <span>{{ certificate.certificate_name }}</span>
+                    <strong>{{ formatDaysUntilExpiry(certificate.days_until_expiry) }}</strong>
+                  </li>
+                </ul>
+                <p v-else>No compliance certificate expiries are currently tracked.</p>
+              </article>
+            </div>
+          </article>
+        </section>
+
+        <section class="app-panel">
+          <div class="app-section-head">
+            <div>
+              <h3>Submission history</h3>
+              <p>Filtered to the active module so drafts and submitted records stay easy to scan.</p>
+            </div>
           </div>
-          <div class="table-scroll">
-            <table v-if="submissions.length" class="data-table">
+
+          <div class="app-table-wrap">
+            <table v-if="paginatedSubmissions.items.length" class="app-table">
               <thead>
                 <tr>
-                  <th>ID</th>
                   <th>Module</th>
-                  <th>Licensee</th>
+                  <th>Organization</th>
+                  <th>Reporting period</th>
                   <th>Status</th>
-                  <th>Date</th>
+                  <th>Submitted</th>
                   <th>Action</th>
                 </tr>
               </thead>
               <tbody>
-                <tr v-for="submission in submissions" :key="submission.id">
-                  <td>{{ submission.id }}</td>
-                  <td>{{ submission.module }}</td>
-                  <td>{{ submission.licensee }}</td>
+                <tr v-for="submission in paginatedSubmissions.items" :key="submission.id">
+                  <td>{{ moduleName(submission.submission_type) }}</td>
+                  <td>{{ organizationName(submission.organization_id) }}</td>
                   <td>
-                    <span class="status-badge" :class="statusClass(submission.status)">
-                      {{ submission.status.toUpperCase() }}
+                    {{ formatDate(submission.reporting_period_start) }} to
+                    {{ formatDate(submission.reporting_period_end) }}
+                  </td>
+                  <td>
+                    <span class="app-status-pill" :class="statusTone(submission.status)">
+                      {{ humanizeToken(submission.status) }}
                     </span>
                   </td>
-                  <td>{{ submission.date }}</td>
+                  <td>
+                    {{
+                      submission.submitted_at
+                        ? formatDateTime(submission.submitted_at)
+                        : "Draft only"
+                    }}
+                  </td>
                   <td>
                     <button
-                      class="action-btn"
+                      class="app-button app-button--secondary"
                       type="button"
-                      @click="viewSubmission(submission.id)"
+                      @click="openSubmission(submission)"
                     >
-                      View
+                      {{ isEditableComplianceStatus(submission.status) ? "Continue" : "View" }}
                     </button>
                   </td>
                 </tr>
               </tbody>
             </table>
-            <div v-else class="loading">No submissions found</div>
+            <p v-else class="app-note">No submissions were found for the selected module.</p>
           </div>
-        </div>
 
-        <div class="table-container">
-          <div class="table-header">
-            <h3>Issued Licenses</h3>
+          <div v-if="paginatedSubmissions.totalPages > 1" class="compliance-page__pagination">
+            <button
+              class="app-button app-button--secondary"
+              type="button"
+              :disabled="paginatedSubmissions.page <= 1"
+              @click="setPage(submissionPage, paginatedSubmissions.page - 1, paginatedSubmissions.totalPages)"
+            >
+              Previous
+            </button>
+            <span>Page {{ paginatedSubmissions.page }} of {{ paginatedSubmissions.totalPages }}</span>
+            <button
+              class="app-button app-button--secondary"
+              type="button"
+              :disabled="paginatedSubmissions.page >= paginatedSubmissions.totalPages"
+              @click="setPage(submissionPage, paginatedSubmissions.page + 1, paginatedSubmissions.totalPages)"
+            >
+              Next
+            </button>
           </div>
-          <div class="table-scroll">
-            <table v-if="issuedLicenses.length" class="data-table">
-              <thead>
-                <tr>
-                  <th>ID</th>
-                  <th>Licensee</th>
-                  <th>Type</th>
-                  <th>Expiry</th>
-                  <th>Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr v-for="license in issuedLicenses" :key="license.id">
-                  <td>{{ license.id }}</td>
-                  <td>{{ license.licensee }}</td>
-                  <td>{{ license.type }}</td>
-                  <td>{{ license.expiry }}</td>
-                  <td>
-                    <span class="status-badge" :class="statusClass(license.status)">
-                      {{ license.status.toUpperCase() }}
-                    </span>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-            <div v-else class="loading">No licenses found</div>
-          </div>
-        </div>
-      </main>
+        </section>
+      </template>
     </div>
-  </div>
+  </ClientWorkspaceLayout>
 </template>
 
 <script setup>
-import { computed, onMounted, reactive, ref } from "vue";
+import { computed, reactive, ref } from "vue";
+import ClientWorkspaceLayout from "../components/auth/ClientWorkspaceLayout.vue";
+import {
+  createComplianceSubmission,
+  fetchComplianceExpiryTracker,
+  fetchComplianceModules,
+  fetchComplianceSubmissions,
+  fetchOrganizations,
+  submitComplianceSubmission,
+  updateComplianceSubmission,
+} from "../lib/platformApi";
+import {
+  formatDate,
+  formatDateTime,
+  formatDaysUntilExpiry,
+  getFieldKey,
+  getFieldOptions,
+  getFieldType,
+  humanizeToken,
+} from "../lib/workspace";
 
-const MODULES_ENDPOINT = "https://bocra-api.skidotools.co.bw/api/v1/compliance/modules";
-
-const currentDate = ref("");
-const modulesLoading = ref(true);
-const modulesError = ref("");
+const loading = ref(true);
+const saving = ref(false);
+const errorMessage = ref("");
+const successMessage = ref("");
 const complianceModules = ref([]);
-const selectedModuleCode = ref("");
-const moduleValues = reactive({});
 const submissions = ref([]);
-const issuedLicenses = ref([]);
-
-const user = {
-  name: "Aupa Moleofe",
-  avatar: "https://i.pravatar.cc/40",
-};
+const organizations = ref([]);
+const expiryTracker = ref({
+  within_days: 90,
+  license_expiries: [],
+  certificate_expiries: [],
+});
+const selectedModuleCode = ref("");
+const selectedSubmissionId = ref("");
+const submissionPage = ref(1);
+const moduleValues = reactive({});
+const editorForm = reactive({
+  organization_id: "",
+  reporting_period_start: "",
+  reporting_period_end: "",
+  certificate_name: "",
+  certificate_reference: "",
+  certificate_expiry_date: "",
+});
 
 const selectedModule = computed(
   () => complianceModules.value.find((module) => module.code === selectedModuleCode.value) || null,
 );
-
+const filteredSubmissions = computed(() =>
+  selectedModuleCode.value
+    ? submissions.value.filter((submission) => submission.submission_type === selectedModuleCode.value)
+    : submissions.value,
+);
+const paginatedSubmissions = computed(() => paginateItems(filteredSubmissions.value, submissionPage.value, 6));
 const stats = computed(() => [
   {
-    label: "Compliance Modules",
-    value: complianceModules.value.length,
+    label: "Modules",
+    value: String(complianceModules.value.length).padStart(2, "0"),
+    caption: "Available filing modules",
   },
   {
-    label: "Pending Submissions",
-    value: submissions.value.filter((submission) => submission.status === "pending").length,
+    label: "Drafts",
+    value: String(submissions.value.filter((item) => item.status === "draft").length).padStart(2, "0"),
+    caption: "Editable submissions",
   },
   {
-    label: "Approved Submissions",
-    value: submissions.value.filter((submission) => submission.status === "approved").length,
+    label: "Submitted",
+    value: String(submissions.value.filter((item) => item.status === "submitted").length).padStart(2, "0"),
+    caption: "Awaiting BOCRA review",
   },
   {
-    label: "Active Licenses",
-    value: issuedLicenses.value.filter((license) => license.status === "active").length,
+    label: "Tracked expiries",
+    value: String(
+      (expiryTracker.value.license_expiries?.length || 0) +
+        (expiryTracker.value.certificate_expiries?.length || 0),
+    ).padStart(2, "0"),
+    caption: "Licence and certificate exposure",
   },
 ]);
 
-function demoModules() {
-  return [
-    {
-      code: "annual_return",
-      name: "Annual Return",
-      description: "Annual compliance return",
-      payload_fields: [
-        {
-          key: "reporting_period",
-          label: "Reporting Period",
-          description: "Enter the financial year or reporting period",
-          field_type: "text",
-          required: true,
-        },
-      ],
-    },
-    {
-      code: "regulatory_report",
-      name: "Regulatory Report",
-      description: "Regulatory filing",
-      payload_fields: [
-        {
-          key: "summary",
-          label: "Summary",
-          description: "Provide a short summary",
-          field_type: "textarea",
-          required: true,
-        },
-      ],
-    },
-    {
-      code: "spectrum_usage_report",
-      name: "Spectrum Usage",
-      description: "Spectrum report",
-      payload_fields: [],
-    },
-    {
-      code: "quality_of_service_report",
-      name: "QoS Report",
-      description: "Quality of service",
-      payload_fields: [],
-    },
-  ];
+loadPageData();
+
+function paginateItems(items = [], page = 1, pageSize = 5) {
+  const totalPages = Math.max(1, Math.ceil(items.length / pageSize) || 1);
+  const currentPage = Math.min(Math.max(page, 1), totalPages);
+  const startIndex = (currentPage - 1) * pageSize;
+  return {
+    page: currentPage,
+    totalPages,
+    items: items.slice(startIndex, startIndex + pageSize),
+  };
 }
 
-function demoSubmissions() {
-  return [
-    {
-      id: "sub001",
-      module: "Annual Return",
-      status: "pending",
-      date: "2024-01-15",
-      licensee: "ABC Corp",
-    },
-    {
-      id: "sub002",
-      module: "QoS Report",
-      status: "approved",
-      date: "2024-01-10",
-      licensee: "XYZ Ltd",
-    },
-    {
-      id: "sub003",
-      module: "Spectrum Usage",
-      status: "pending",
-      date: "2024-01-12",
-      licensee: "Telecom BW",
-    },
-  ];
-}
-
-function demoLicenses() {
-  return [
-    {
-      id: "lic001",
-      licensee: "ABC Corp",
-      type: "Network Services",
-      expiry: "2024-12-31",
-      status: "active",
-    },
-    {
-      id: "lic002",
-      licensee: "XYZ Ltd",
-      type: "Application Services",
-      expiry: "2024-06-30",
-      status: "expiring",
-    },
-    {
-      id: "lic003",
-      licensee: "Telecom BW",
-      type: "Frequency Assignment",
-      expiry: "2025-03-15",
-      status: "active",
-    },
-  ];
+function setPage(targetRef, nextPage, totalPages) {
+  targetRef.value = Math.min(Math.max(nextPage, 1), Math.max(totalPages, 1));
 }
 
 function clearModuleValues() {
@@ -336,404 +425,270 @@ function clearModuleValues() {
   });
 }
 
-function getFieldKey(field, index) {
-  return (
-    field.key ||
-    field.name ||
-    field.label?.toLowerCase().replace(/[^a-z0-9]+/g, "_") ||
-    `field_${index}`
-  );
-}
-
-function getFieldType(field) {
-  const rawType = String(field.type || field.field_type || "text").toLowerCase();
-  if (rawType === "textarea") {
-    return "textarea";
-  }
-
-  if (rawType === "select" || Array.isArray(field.options) || Array.isArray(field.choices)) {
-    return "select";
-  }
-
-  if (["date", "email", "number", "password", "tel", "url"].includes(rawType)) {
-    return rawType;
-  }
-
-  return "text";
-}
-
-function getFieldOptions(field) {
-  const source = field.options || field.choices || [];
-  return source.map((option) => {
-    if (typeof option === "string") {
-      return { label: option, value: option };
-    }
-
-    return {
-      label: option.label || option.name || option.value || "Option",
-      value: option.value || option.code || option.id || option.label || option.name,
-    };
-  });
-}
-
-function initializeModuleValues(module) {
+function populateModuleValues(payload = {}) {
   clearModuleValues();
-  (module?.payload_fields || []).forEach((field, index) => {
-    moduleValues[getFieldKey(field, index)] = "";
+  (selectedModule.value?.payload_fields || []).forEach((field, index) => {
+    const key = getFieldKey(field, index);
+    moduleValues[key] = payload?.[key] ?? "";
   });
 }
 
-function selectModule(code) {
-  selectedModuleCode.value = code;
-  initializeModuleValues(selectedModule.value);
-}
-
-function statusClass(status) {
-  if (status === "approved" || status === "active") {
-    return "status-approved";
+function normalizeValueByField(field, value) {
+  if (value === undefined || value === null || value === "") {
+    return value;
   }
 
-  if (status === "expiring" || status === "expired") {
-    return "status-expired";
+  if (getFieldType(field) === "number") {
+    const numericValue = Number(value);
+    return Number.isNaN(numericValue) ? value : numericValue;
   }
 
-  return "status-pending";
+  return typeof value === "string" ? value.trim() : value;
 }
 
-function viewSubmission(id) {
-  window.alert(`Opening submission ${id}.`);
+function buildPayload() {
+  return (selectedModule.value?.payload_fields || []).reduce((payload, field, index) => {
+    const key = getFieldKey(field, index);
+    const normalizedValue = normalizeValueByField(field, moduleValues[key]);
+    if (normalizedValue !== undefined && normalizedValue !== null && normalizedValue !== "") {
+      payload[key] = normalizedValue;
+    }
+    return payload;
+  }, {});
 }
 
-function submitComplianceForm() {
-  console.log("Compliance submission:", {
-    module: selectedModule.value,
-    values: { ...moduleValues },
+function statusTone(status) {
+  const normalized = String(status || "").toLowerCase();
+
+  if (["accepted", "approved", "active", "verified"].includes(normalized)) {
+    return "app-status-pill--success";
+  }
+
+  if (["rejected", "expired", "overdue", "suspended", "revoked"].includes(normalized)) {
+    return "app-status-pill--danger";
+  }
+
+  return "app-status-pill--warning";
+}
+
+function isEditableComplianceStatus(status) {
+  return ["draft", "rejected"].includes(String(status || "").toLowerCase());
+}
+
+function upsertById(collection = [], record) {
+  const nextCollection = collection.filter((item) => item.id !== record.id);
+  return [record, ...nextCollection].sort((left, right) => {
+    const rightValue = new Date(right.updated_at || right.created_at || 0).getTime();
+    const leftValue = new Date(left.updated_at || left.created_at || 0).getTime();
+    return rightValue - leftValue;
   });
-  window.alert("Compliance report submitted successfully!");
 }
 
-async function loadModules() {
-  modulesLoading.value = true;
-  modulesError.value = "";
+function moduleName(code) {
+  return complianceModules.value.find((item) => item.code === code)?.name || humanizeToken(code);
+}
+
+function organizationName(organizationId) {
+  return organizations.value.find((item) => item.id === organizationId)?.name || "Linked organization";
+}
+
+function pushError(error, fallbackMessage) {
+  errorMessage.value = error?.message || fallbackMessage;
+}
+
+function resetEditor() {
+  selectedSubmissionId.value = "";
+  editorForm.organization_id = organizations.value[0]?.id || "";
+  editorForm.reporting_period_start = "";
+  editorForm.reporting_period_end = "";
+  editorForm.certificate_name = "";
+  editorForm.certificate_reference = "";
+  editorForm.certificate_expiry_date = "";
+  populateModuleValues({});
+}
+
+function selectModule(moduleCode) {
+  selectedModuleCode.value = moduleCode;
+  submissionPage.value = 1;
+  resetEditor();
+}
+
+function openSubmission(submission) {
+  selectedModuleCode.value = submission.submission_type;
+  selectedSubmissionId.value = submission.id;
+  editorForm.organization_id = submission.organization_id || "";
+  editorForm.reporting_period_start = String(submission.reporting_period_start || "").slice(0, 10);
+  editorForm.reporting_period_end = String(submission.reporting_period_end || "").slice(0, 10);
+  editorForm.certificate_name = submission.certificate_name || "";
+  editorForm.certificate_reference = submission.certificate_reference || "";
+  editorForm.certificate_expiry_date = String(submission.certificate_expiry_date || "").slice(0, 10);
+  populateModuleValues(submission.payload || {});
+}
+
+function buildDraftPayload() {
+  return {
+    organization_id: editorForm.organization_id,
+    submission_type: selectedModuleCode.value,
+    reporting_period_start: editorForm.reporting_period_start,
+    reporting_period_end: editorForm.reporting_period_end,
+    payload: buildPayload(),
+    certificate_name: editorForm.certificate_name || undefined,
+    certificate_reference: editorForm.certificate_reference || undefined,
+    certificate_expiry_date: editorForm.certificate_expiry_date || undefined,
+  };
+}
+
+async function loadPageData() {
+  loading.value = true;
+  errorMessage.value = "";
 
   try {
-    const response = await fetch(MODULES_ENDPOINT);
-    const payload = await response.json();
-    const modules = Array.isArray(payload) ? payload : payload.data || [];
-    complianceModules.value = modules.length ? modules : demoModules();
+    const [moduleData, submissionData, organizationData, expiryTrackerData] = await Promise.all([
+      fetchComplianceModules(),
+      fetchComplianceSubmissions(),
+      fetchOrganizations(),
+      fetchComplianceExpiryTracker(90),
+    ]);
+
+    complianceModules.value = moduleData;
+    submissions.value = submissionData;
+    organizations.value = organizationData;
+    expiryTracker.value = expiryTrackerData;
+    selectedModuleCode.value = moduleData[0]?.code || "";
+    resetEditor();
   } catch (error) {
-    console.error("Failed to load modules:", error);
-    complianceModules.value = demoModules();
-    modulesError.value = "Failed to load live modules. Showing demo data.";
+    pushError(error, "We couldn't load the compliance workspace.");
   } finally {
-    selectedModuleCode.value = complianceModules.value[0]?.code || "";
-    initializeModuleValues(selectedModule.value);
-    modulesLoading.value = false;
+    loading.value = false;
   }
 }
 
-onMounted(() => {
-  currentDate.value = new Date().toDateString();
-  submissions.value = demoSubmissions();
-  issuedLicenses.value = demoLicenses();
-  loadModules();
-});
+async function saveDraft() {
+  saving.value = true;
+  errorMessage.value = "";
+  successMessage.value = "";
+
+  try {
+    const payload = buildDraftPayload();
+    let submission = null;
+
+    if (selectedSubmissionId.value) {
+      submission = await updateComplianceSubmission(selectedSubmissionId.value, {
+        reporting_period_start: payload.reporting_period_start,
+        reporting_period_end: payload.reporting_period_end,
+        payload: payload.payload,
+        certificate_name: payload.certificate_name,
+        certificate_reference: payload.certificate_reference,
+        certificate_expiry_date: payload.certificate_expiry_date,
+      });
+    } else {
+      submission = await createComplianceSubmission(payload);
+    }
+
+    selectedSubmissionId.value = submission.id;
+    submissions.value = upsertById(submissions.value, submission);
+    openSubmission(submission);
+    successMessage.value = "Compliance draft saved successfully.";
+  } catch (error) {
+    pushError(error, "We couldn't save the compliance draft.");
+  } finally {
+    saving.value = false;
+  }
+}
+
+async function submitRecord() {
+  saving.value = true;
+  errorMessage.value = "";
+  successMessage.value = "";
+
+  try {
+    let submissionId = selectedSubmissionId.value;
+    if (!submissionId) {
+      const draft = await createComplianceSubmission(buildDraftPayload());
+      submissionId = draft.id;
+      selectedSubmissionId.value = draft.id;
+      submissions.value = upsertById(submissions.value, draft);
+    }
+
+    const submitted = await submitComplianceSubmission(submissionId, {
+      payload: buildPayload(),
+      certificate_name: editorForm.certificate_name || undefined,
+      certificate_reference: editorForm.certificate_reference || undefined,
+      certificate_expiry_date: editorForm.certificate_expiry_date || undefined,
+    });
+
+    submissions.value = upsertById(submissions.value, submitted);
+    openSubmission(submitted);
+    successMessage.value = "Compliance record submitted to BOCRA.";
+  } catch (error) {
+    pushError(error, "We couldn't submit the compliance record.");
+  } finally {
+    saving.value = false;
+  }
+}
 </script>
 
-<style>
-.compliance-page,
-.compliance-page * {
-  box-sizing: border-box;
-  font-family: "Inter", sans-serif;
-}
-
-.compliance-page {
-  background: #f8fafc;
-  color: #1e293b;
-  min-height: 100vh;
-}
-
-.compliance-page .layout {
-  display: flex;
-  min-height: 100vh;
-}
-
-.compliance-page .sidebar {
-  width: 240px;
-  background: #ffffff;
-  border-right: 1px solid #e5e7eb;
-  padding: 20px;
-  display: flex;
-  flex-direction: column;
-}
-
-.compliance-page .brand {
-  font-weight: 600;
-  font-size: 18px;
-  margin-bottom: 25px;
-}
-
-.compliance-page .sidebar nav a,
-.compliance-page .logout a {
-  display: block;
-  padding: 10px;
-  border-radius: 10px;
-  color: #475569;
-  text-decoration: none;
-  margin-bottom: 5px;
-}
-
-.compliance-page .sidebar nav a:hover,
-.compliance-page .logout a:hover {
-  background: #f1f5f9;
-}
-
-.compliance-page .sidebar nav a.active {
-  background: #e0ecff;
-  color: #2563eb;
-}
-
-.compliance-page .sidebar nav a.disabled {
-  color: #94a3b8;
-  cursor: default;
-}
-
-.compliance-page .logout {
-  margin-top: auto;
-  padding-top: 20px;
-  border-top: 1px solid #e5e7eb;
-}
-
-.compliance-page main {
-  flex: 1;
-  padding: 20px;
-}
-
-.compliance-page .topbar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  background: #fff;
-  padding: 15px 20px;
-  border-radius: 14px;
-  border: 1px solid #e5e7eb;
-  margin-bottom: 20px;
-}
-
-.compliance-page .user {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.compliance-page .user img {
-  width: 40px;
-  border-radius: 50%;
-}
-
-.compliance-page .stats-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 20px;
-  margin-bottom: 30px;
-}
-
-.compliance-page .stat-card {
-  background: #fff;
-  border-radius: 14px;
-  border: 1px solid #e5e7eb;
-  padding: 24px;
-  text-align: center;
-}
-
-.compliance-page .stat-number {
-  font-size: 36px;
-  font-weight: 700;
-  color: #1e293b;
-  margin-bottom: 8px;
-}
-
-.compliance-page .stat-label {
-  color: #64748b;
-  font-size: 14px;
-  font-weight: 500;
-}
-
-.compliance-page .table-container {
-  background: #fff;
-  border-radius: 14px;
-  border: 1px solid #e5e7eb;
-  overflow: hidden;
-  margin-bottom: 20px;
-}
-
-.compliance-page .table-header {
-  padding: 20px;
-  border-bottom: 1px solid #e5e7eb;
-}
-
-.compliance-page .table-header h3 {
+<style scoped>
+.compliance-page__success {
   margin: 0;
-}
-
-.compliance-page .table-scroll {
-  overflow-x: auto;
-}
-
-.compliance-page .data-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.compliance-page .data-table th {
-  background: #f8fafc;
-  padding: 15px 20px;
-  text-align: left;
+  padding: 0.95rem 1rem;
+  border-radius: 1rem;
+  background: rgba(15, 118, 110, 0.1);
+  color: #0f766e;
   font-weight: 600;
-  color: #374151;
-  border-bottom: 2px solid #e5e7eb;
 }
 
-.compliance-page .data-table td {
-  padding: 15px 20px;
-  border-bottom: 1px solid #f1f5f9;
+.compliance-page__grid {
+  display: grid;
+  gap: 1.25rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
-.compliance-page .data-table tr:hover {
-  background: #f8fafc;
-}
-
-.compliance-page .status-badge {
-  padding: 4px 12px;
-  border-radius: 9999px;
-  font-size: 12px;
-  font-weight: 500;
-}
-
-.compliance-page .status-pending {
-  background: #fef3c7;
-  color: #92400e;
-}
-
-.compliance-page .status-approved {
-  background: #d1fae5;
-  color: #065f46;
-}
-
-.compliance-page .status-expired {
-  background: #fee2e2;
-  color: #991b1b;
-}
-
-.compliance-page .tabs-container {
-  margin-bottom: 20px;
-}
-
-.compliance-page .tabs {
+.compliance-page__actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: 0.85rem;
+  align-items: center;
 }
 
-.compliance-page .tab {
-  padding: 10px 20px;
-  border-radius: 10px;
-  background: #e5e7eb;
-  cursor: pointer;
-  font-weight: 500;
-  border: none;
+.compliance-page__expiry-stack {
+  display: grid;
+  gap: 0.9rem;
 }
 
-.compliance-page .tab.active {
-  background: #2563eb;
-  color: #fff;
+.compliance-page__mini-list {
+  display: grid;
+  gap: 0.55rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
 }
 
-.compliance-page .application-form {
-  background: #fff;
-  padding: 20px;
-  border-radius: 14px;
-  border: 1px solid #e5e7eb;
-  margin-bottom: 20px;
+.compliance-page__mini-list li {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
 }
 
-.compliance-page .application-form p {
-  color: #64748b;
+.compliance-page__pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 1rem;
 }
 
-.compliance-page .application-form input,
-.compliance-page .application-form select,
-.compliance-page .application-form textarea {
-  width: 100%;
-  padding: 12px;
-  border: 1px solid #d1d5db;
-  border-radius: 8px;
+@media (max-width: 1100px) {
+  .compliance-page__grid {
+    grid-template-columns: 1fr;
+  }
 }
 
-.compliance-page .form-field {
-  margin-bottom: 16px;
-}
-
-.compliance-page .form-field label {
-  display: block;
-  margin-bottom: 8px;
-  color: #374151;
-  font-weight: 500;
-}
-
-.compliance-page .required {
-  color: #ef4444;
-}
-
-.compliance-page .form-actions {
-  text-align: center;
-  margin-top: 30px;
-}
-
-.compliance-page .submit-button,
-.compliance-page .action-btn {
-  background: #2563eb;
-  color: #fff;
-  border: none;
-  padding: 10px 18px;
-  border-radius: 10px;
-  cursor: pointer;
-}
-
-.compliance-page .loading {
-  color: #64748b;
-}
-
-.compliance-page .loading.error {
-  color: #b91c1c;
-}
-
-@media (max-width: 900px) {
-  .compliance-page .layout {
+@media (max-width: 780px) {
+  .compliance-page__pagination,
+  .compliance-page__actions {
     flex-direction: column;
-  }
-
-  .compliance-page .sidebar {
-    width: 100%;
-    border-right: none;
-    border-bottom: 1px solid #e5e7eb;
-  }
-}
-
-@media (max-width: 600px) {
-  .compliance-page main {
-    padding: 12px;
-  }
-
-  .compliance-page .topbar {
-    flex-direction: column;
-    gap: 10px;
-    text-align: center;
-  }
-
-  .compliance-page .data-table th,
-  .compliance-page .data-table td {
-    padding: 12px;
+    align-items: stretch;
   }
 }
 </style>
